@@ -5,6 +5,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include "gpio.h"
 #include "sw.h"
 
 #define ERR(source) 		(perror(source),\
@@ -38,8 +39,17 @@ static const int SW_BTNS[SW_BNUM] = {
 	SW_BTN_RESET 
 };
 
+unsigned int sw_state;
 struct timespec sw_reftime;						// reference time - used for time measurement
 unsigned long int sw_totaltime, sw_laptime;		// measured total time and current lap time
+
+void sw_init();
+void sw_tick();
+void sw_fin();
+
+void sw_onoff();
+void sw_lap();
+void sw_reset(); 
 
 void sw_update();
 void sw_blink(unsigned pin);
@@ -64,6 +74,35 @@ void sw_init(int *sw_btnfds)
 
 	sw_totaltime = sw_laptime = 0;
 	sw_state = SW_STOPPED;
+}
+
+/*	SW_TICK
+ *	updates the time and caches the last measurement time
+ */
+void sw_tick()
+{
+	long time_diff;
+	struct timespec sw_ticktime;
+
+	if (sw_state != SW_STARTED) {
+		return;
+	}
+
+	if (clock_gettime(CLOCK_REALTIME, &sw_ticktime) == -1) {
+		ERR("sw_tick");
+	}
+
+	time_diff = (sw_ticktime.tv_sec  - sw_reftime.tv_sec)  * 1000 +
+				(sw_ticktime.tv_nsec - sw_reftime.tv_nsec) / 1000000;
+
+	sw_totaltime += time_diff;
+	sw_laptime 	 += time_diff;
+
+	memcpy(&sw_reftime, &sw_ticktime, sizeof(struct timespec));
+	printf("\rtotal time: %02lu:%02lu:%03lu \t lap time: %02lu:%02lu:%03lu", 
+			sw_totaltime / 60000, (sw_totaltime / 1000) % 60, sw_totaltime % 1000,
+			sw_laptime   / 60000, (sw_laptime   / 1000) % 60, sw_laptime   % 1000);
+	fflush(stdout);
 }
 
 /*	SW_FIN
@@ -141,35 +180,6 @@ void sw_reset()
 
 	sw_update();
 	sw_blink(SW_LED_RESET);
-}
-
-/*	SW_TICK
- *	updates the time and caches the last measurement time
- */
-void sw_tick()
-{
-	long time_diff;
-	struct timespec sw_ticktime;
-
-	if (sw_state != SW_STARTED) {
-		return;
-	}
-
-	if (clock_gettime(CLOCK_REALTIME, &sw_ticktime) == -1) {
-		ERR("sw_tick");
-	}
-
-	time_diff = (sw_ticktime.tv_sec  - sw_reftime.tv_sec)  * 1000 +
-				(sw_ticktime.tv_nsec - sw_reftime.tv_nsec) / 1000000;
-
-	sw_totaltime += time_diff;
-	sw_laptime 	 += time_diff;
-
-	memcpy(&sw_reftime, &sw_ticktime, sizeof(struct timespec));
-	printf("\rtotal time: %02lu:%02lu:%03lu \t lap time: %02lu:%02lu:%03lu", 
-			sw_totaltime / 60000, (sw_totaltime / 1000) % 60, sw_totaltime % 1000,
-			sw_laptime   / 60000, (sw_laptime   / 1000) % 60, sw_laptime   % 1000);
-	fflush(stdout);
 }
 
 /*	SW_UPDATE

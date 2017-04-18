@@ -1,9 +1,9 @@
 #define _GNU_SOURCE
+#include <poll.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <poll.h>
 #include <time.h>
 #include <unistd.h>
 #include "gpio.h"
@@ -38,12 +38,13 @@ void sethandler( void (*f)(int), int sigNo) {
 int main(int argc, char **argv)
 {
 	int i, rfd;
-	int sw_btnfds[SW_BNUM];
+	int sw_btnfds[SW_BNUM];				/* GPIO buttons file descriptors */
 	char val_buf, buf[MAX_BUF];
 	sigset_t mask;
 	struct timespec timeout;
 	struct pollfd fdset[SW_BNUM], poll_fdset[SW_BNUM], dbnc_fdset[SW_BNUM];
 	void (*sw_btnaction[SW_BNUM])(void) = {	sw_onoff, sw_lap, sw_reset };
+		/* callbacks for every GPIO button */
 
 	sw_init(sw_btnfds);
 	memset((void*)fdset, 0, sizeof(fdset));
@@ -63,7 +64,17 @@ int main(int argc, char **argv)
 		memcpy(&poll_fdset, &fdset, sizeof(fdset));
 		memcpy(&dbnc_fdset, &fdset, sizeof(fdset));
 
+		/* first ppoll - waits until a input is ready or signal is delivered
+		 * allows to handle smooth interrupt from keyboard
+		 */
 		if ((rfd = ppoll(poll_fdset, SW_BNUM, &timeout, &mask)) > 0) {
+
+			/* second poll - debouncing loop, which clears the descriptors
+			 * (reads from them till the end) and polls until a timeout
+			 * (DEBOUNCE_TIMEOUT) is reached
+			 * ppoll is here unnecessarry (since we will not receive any
+			 * GPIO state further changes
+			 */
 			do {
 				for (i = 0; i < SW_BNUM; ++i) {
 					if (dbnc_fdset[i].revents & POLLPRI) {
@@ -74,6 +85,10 @@ int main(int argc, char **argv)
 				memcpy(&dbnc_fdset, &fdset, sizeof(fdset));
 			} while (poll(dbnc_fdset, SW_BNUM, SW_DEBOUNCE_TIMEOUT) > 0);
 
+			/* polls each revents field for a specific received event
+			 * and takes a callback action while button was pressed
+			 * (not released!)
+			 */
 			for (i = 0; i < SW_BNUM; ++i) {
 				if (poll_fdset[i].revents & POLLPRI) {
 					lseek(poll_fdset[i].fd, 0, SEEK_SET);
@@ -87,6 +102,7 @@ int main(int argc, char **argv)
 				}
 			}
 		} else if (rfd == 0) {
+			/* update the stopwatch info */
 			sw_tick();
 		} else {
 			ERR("sw_work");
