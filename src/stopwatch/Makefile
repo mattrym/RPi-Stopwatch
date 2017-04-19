@@ -1,5 +1,5 @@
 OBJS := gpio.o sw.o main.o 
-worms: $(OBJS)
+stopwatch: $(OBJS)
 	$(CC) -o stopwatch $(OBJS)
 $(OBJS): %.o : %.c
 	$(CC) -c $(CFLAGS) $< -o $@
