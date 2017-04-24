@@ -1,8 +1,0 @@
-config BR2_PACKAGE_STOPWATCH
-	bool "stopwatch"
-	help
-	  Simple library-independent stopwatch 
-	  using GPIO Linux sysfs interface
-
-	  Author: Mateusz Rymuszka
-	  rymuszkam@student.mini.pw.edu.pl

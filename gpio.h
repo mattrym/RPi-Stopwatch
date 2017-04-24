@@ -9,14 +9,14 @@
 #define GPIO_EDGE_FALLING 	"falling"
 #define GPIO_EDGE_BOTH		"both"
 
-#define GPIO_LED_1 			5
-#define GPIO_LED_2		 	6
-#define GPIO_LED_3 			13
-#define GPIO_LED_4 			19
+#define GPIO_LED_1 			24
+#define GPIO_LED_2		 	18
+#define GPIO_LED_3 			23
+#define GPIO_LED_4 			17
 
-#define GPIO_BTN_TOP 		20
-#define GPIO_BTN_LEFT 		21
-#define GPIO_BTN_RIGHT 		16
+#define GPIO_BTN_TOP 		27
+#define GPIO_BTN_LEFT 		10
+#define GPIO_BTN_RIGHT 		22
 
 void gpio_export(unsigned pin);
 void gpio_unexport(unsigned pin);

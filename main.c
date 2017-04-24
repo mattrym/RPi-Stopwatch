@@ -37,7 +37,7 @@ void sethandler( void (*f)(int), int sigNo) {
 
 int main(int argc, char **argv)
 {
-	int i, rfd;
+	int i, rfd, not_pressed, tmpVal;
 	int sw_btnfds[SW_BNUM];				/* GPIO buttons file descriptors */
 	char val_buf, buf[MAX_BUF];
 	sigset_t mask;
@@ -59,10 +59,12 @@ int main(int argc, char **argv)
 
 	timeout.tv_sec = SW_TIMEOUT_SEC;
 	timeout.tv_nsec = SW_TIMEOUT_NSEC;
+	not_pressed = 3;
 
-	while (running) {
+	while (running && not_pressed) {
 		memcpy(&poll_fdset, &fdset, sizeof(fdset));
 		memcpy(&dbnc_fdset, &fdset, sizeof(fdset));
+		not_pressed = 3;
 
 		/* first ppoll - waits until a input is ready or signal is delivered
 		 * allows to handle smooth interrupt from keyboard
@@ -97,8 +99,12 @@ int main(int argc, char **argv)
 
 					if (val_buf == SW_PRESSED) {
 						(sw_btnaction[i])();
-						continue;
 					}
+				}
+
+				gpio_read_value(poll_fdset[i].fd, &tmpVal);
+				if (!tmpVal) {
+					--not_pressed;
 				}
 			}
 		} else if (rfd == 0) {

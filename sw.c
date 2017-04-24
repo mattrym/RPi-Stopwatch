@@ -12,15 +12,6 @@
                      		 fprintf(stderr,"%s:%d\n",__FILE__,__LINE__),\
                      		 exit(EXIT_FAILURE))
 
-#define SW_LED_START	 	GPIO_LED_3
-#define SW_LED_STOP		 	GPIO_LED_1
-#define SW_LED_LAP			GPIO_LED_2
-#define SW_LED_RESET 		GPIO_LED_4
-
-#define SW_BTN_RESET 		GPIO_BTN_TOP
-#define SW_BTN_ONOFF 		GPIO_BTN_RIGHT
-#define SW_BTN_LAP 			GPIO_BTN_LEFT
-
 #define SW_STOPPED			0
 #define SW_STARTED			1
 
